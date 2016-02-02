@@ -35,7 +35,7 @@ app.get("/cal/:year/:month", (req, res)=>{
 app.get("/cal/:year", (req, res)=>{
 
     makeYear(req.params.year);
-    res.status(200).send(`<pre>${makeYear(2016).toString()}</pre>`);
+    res.status(200).send(`<pre>${makeYear(req.params.year).toString()}</pre>`);
 
     res.end("Welcome to mah cal");
 });
