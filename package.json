@@ -20,7 +20,8 @@
   },
   "homepage": "https://github.com/bbleds/node-webserver#readme",
   "dependencies": {
-    "express": "^4.13.4"
+    "express": "^4.13.4",
+    "lodash": "^4.2.0"
   },
   "devDependencies": {
     "nodemon": "^1.8.1"
