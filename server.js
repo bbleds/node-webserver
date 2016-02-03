@@ -4,6 +4,9 @@ const express = require("express");
 const app = express();
 const { PORT } = process.env;
 
+//set templating engine to jad or something else
+app.set("view engine", "jade");
+
 const {outputCal} = require("./lib/monthGen.js");
 const {makeYear} = require("./lib/yearGen.js");
 
@@ -50,7 +53,11 @@ app.get("/spaz/:numOne/:numTwo", (req, res)=>{
 
 //default route
 app.get("/", (req, res)=>{
-    res.end("hey hey hey hey");
+    //load index by default --> this wil look for views directory and an index file, since we have index as jade it will generate the html from jade because of our view engine
+    res.render("index", {
+      title: "Super Cool App",
+      date: new Date()
+    });
 });
 
 //catch all route
