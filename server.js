@@ -88,7 +88,7 @@ app.post("/sendphoto", upload.single('myimage'), (req, res) => {
             console.log(json.data.link);
             //remove from uploads
             fs.unlink(req.file.path, ()=>{
-              console.log("bruh");
+              console.log("File uploaded to imgur and delted from public/uploads");
             });
         })
         .catch(function (err) {
