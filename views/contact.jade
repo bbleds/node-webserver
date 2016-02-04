@@ -10,18 +10,15 @@ html
 		.row
 			.col-md-1
 			.col-md-10
-				#mainLanding
-					h1 CALJS
-					p.thin#subHead A better way to calendar
-					i.fa.fa-calendar.animated.fadeInDown
-					p.thin.animated.fadeInUp.center Find dates from now until the year 9999!<br> You know you need this.
-					button.btn.btn-default.animated.zoomIn#clickPop(data-target="#myModal" data-toggle="modal") Demo
-
-				#mainPopup
-					h1 buy me now
+				h1= title
+				form(method="POST")
+					.form-group
+						input.form-control(type="text", placeholder="Name" name="name")
+						input.form-control(type="email", placeholder="Email" name="email")
+						textarea.form-control(placeholder="Send us a message" name="message")
+					button.btn.btn-primary(type="submit") Submit
 
 
 		script(src="/vendor/jquery/dist/jquery.min.js")
 		script(src="/vendor/bootstrap/dist/js/bootstrap.min.js")
 		script(src="/javascripts/main.js")
-
