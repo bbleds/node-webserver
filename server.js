@@ -1,21 +1,100 @@
 "use strict";
 
 const express = require("express");
+const sassMiddleware = require('node-sass-middleware');
 const app = express();
 const { PORT } = process.env;
+const path = require('path');
+const bodyParser = require("body-parser");
+const multer = require("multer");
+const imgur = require('imgur');
+const fs = require('fs');
 
-//set templating engine to jad or something else
+const storage = multer.diskStorage({
+  destination: "public/uploads/",
+  filename: function (req, file, cb) {
+    cb(null, Date.now() + path.extname(file.originalname))
+  }
+})
+
+const upload = multer({ storage: storage })
+
+
+//set templating engine to jade or something else
 app.set("view engine", "jade");
+
+//BASICALLY SERVER GOES HEY LOOK FOR EVERYTHING IN HERE FOR Get REQUESTS
 
 const {outputCal} = require("./lib/monthGen.js");
 const {makeYear} = require("./lib/yearGen.js");
 
-console.log(outputCal(3,2016));
+
+//middleware
+app.use(sassMiddleware({
+    /* Options */
+    src: path.join(__dirname, 'public'),
+    dest: path.join(__dirname, 'public'),
+    //this is whitespace indent rather than curly braces
+    indentedSyntax: true,
+    debug: true,
+    outputStyle: 'compressed',
+    prefix:  '/prefix'  // Where prefix is at <link rel="stylesheets" href="prefix/style.css"/>
+}));
+
+//execute body parser, use body parser -> app.use
+app.use(bodyParser.json());
+//use extended options
+// app.use(bodyParser.urlencoded({ extended: false }));
+
+app.use(express.static(path.join(__dirname, '/public')));
+
+//add local vars for render
+app.locals.title = "The Super Awesome Cal";
 
 
 //random route
 app.get("/random", (req, res)=>{
     res.end("this is the random route");
+});
+
+
+//random route
+app.get("/contact", (req, res)=>{
+    if(req.query.name){
+      res.send("<h1>Thanks bruh</h1>");
+    }
+    res.render("contact");
+});
+
+//set app.post for contact form
+app.post("/contact", (req, res) => {
+   console.log(req.body) //you will get your data in this as object.
+  res.send("<h1>Thanks "+req.body.name+"</h1>");
+});
+
+app.get("/sendphoto", (req, res) => {
+  res.render("sendphoto");
+});
+
+//set app.post for photo
+app.post("/sendphoto", upload.single('myimage'), (req, res) => {
+  console.log(req.body);
+  console.log("file below");
+  console.log(req.file);
+  res.send("<h1>Thanks for sending us your sweet photo</h1>");
+    // send single image
+    imgur.uploadFile(req.file.path)
+        .then(function (json) {
+            console.log(json.data.link);
+            //remove from uploads
+            fs.unlink(req.file.path, ()=>{
+              console.log("bruh");
+            });
+        })
+        .catch(function (err) {
+            console.error(err.message);
+        });
+
 });
 
 //hello route with params
@@ -51,13 +130,10 @@ app.get("/spaz/:numOne/:numTwo", (req, res)=>{
     res.end(`${getRandomArbitrary(parseInt(req.params.numOne),parseInt(req.params.numTwo))}`);
 });
 
-//default route
+//default route for cal landing page
 app.get("/", (req, res)=>{
     //load index by default --> this wil look for views directory and an index file, since we have index as jade it will generate the html from jade because of our view engine
-    res.render("index", {
-      title: "Super Cool App",
-      date: new Date()
-    });
+      res.render("index");
 });
 
 //catch all route

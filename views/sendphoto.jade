@@ -1,0 +1,22 @@
+doctype html
+html
+	head
+		title= title
+		link(href='/vendor/bootstrap/dist/css/bootstrap.min.css', rel='stylesheet')
+		link(href='/vendor/font-awesome/css/font-awesome.min.css', rel='stylesheet')
+		link(href='/vendor/animate.css', rel='stylesheet')
+		link(href='/stylesheets/main.css', rel='stylesheet')
+	body
+		.row
+			.col-md-1
+			.col-md-10
+				h1 Send Us a photo of you cheesin with cal.js
+				form(method="POST", enctype="multipart/form-data")
+					.form-group
+						input.form-control(type="file", name="myimage", accept="image/jpeg")
+					button.btn.btn-primary(type="submit") Share yo photo
+
+
+		script(src="/vendor/jquery/dist/jquery.min.js")
+		script(src="/vendor/bootstrap/dist/js/bootstrap.min.js")
+		script(src="/javascripts/main.js")
