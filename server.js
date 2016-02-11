@@ -9,6 +9,9 @@ const bodyParser = require("body-parser");
 const multer = require("multer");
 const imgur = require('imgur');
 const fs = require('fs');
+const request = require('request');
+const cheerio = require('cheerio');
+const _ = require('lodash');
 
 const storage = multer.diskStorage({
   destination: "public/uploads/",
@@ -45,7 +48,6 @@ app.use(sassMiddleware({
 app.use(bodyParser.json());
 //use extended options
 // app.use(bodyParser.urlencoded({ extended: false }));
-
 app.use(express.static(path.join(__dirname, '/public')));
 
 //add local vars for render
@@ -134,6 +136,55 @@ app.get("/spaz/:numOne/:numTwo", (req, res)=>{
 app.get("/", (req, res)=>{
     //load index by default --> this wil look for views directory and an index file, since we have index as jade it will generate the html from jade because of our view engine
       res.render("index");
+});
+
+
+
+
+/////api routes
+app.get("/api", (req, res)=>{
+  res.header('Access-Control-Allow-Origin', "*");
+  res.send({"name":"ben"})
+});
+
+app.post("/api", (req, res)=>{
+  console.log(req.body);
+  res.send({"hello":"world"});
+
+});
+  //top stories --> get top stories from cnn
+app.get("/api/news", (req, res)=>{
+    const url = "http://cnn.com";
+    request.get(url, (err, response, body )=>{
+      if (err) throw err;
+
+      const topStories = [];
+      const $ = cheerio.load(body)
+
+      topStories.push({
+        title : $(".banner-text").text(),
+        url : $(".banner-text").closest("a").attr("href")
+      });
+
+      _.range(1,12).forEach(i=>{
+        topStories.push({
+          title: $(".cd__headline").eq(i).text(),
+          url: $(".cd__headline").eq(i).find("a").attr("href")
+        });
+
+      });
+
+      res.send(topStories)
+    })
+});
+
+  //handling cors with request npm, this now works and gets around cors --> my body is already json parsed
+app.get("/api/weather", (req, res)=>{
+  let url = "https://api.forecast.io/forecast/deddf761abe49ca199f649859b49fc32/35.9851060,-86.6486830";
+  request.get(url, (err, response, body )=>{
+      res.header('Access-Control-Allow-Origin', "*");
+      res.send(body);
+  });
 });
 
 //catch all route
