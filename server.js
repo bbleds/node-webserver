@@ -12,8 +12,11 @@ const fs = require('fs');
 const request = require('request');
 const cheerio = require('cheerio');
 const _ = require('lodash');
-const MongoClient = require('mongodb').MongoClient, assert = require('assert');
-const MONGODB_URL = "mongodb://localhost:27017/node-webserver"
+// now using mongoose
+// const MongoClient = require('mongodb').MongoClient
+const assert = require('assert');
+const mongoose = require("mongoose");
+const MONGODB_URL = "mongodb://localhost:27017/node-webserver";
 
 const storage = multer.diskStorage({
   destination: "public/uploads/",
@@ -86,21 +89,40 @@ app.get("/contact", (req, res)=>{
     res.render("contact");
 });
 
+
+//define our schema
+const mySchema = mongoose.Schema({
+
+  iceCreamName: String,
+  name: String
+})
+
+const choiceModel = mongoose.model("choices", mySchema)
+
+
 //set app.post for contact form
 app.post("/contact", (req, res) => {
   console.log("body ------>");
    console.log(req.body) //you will get your data in this as object.
-   //save in db in test collection
-   db.collection("test").insertOne({
-    name: req.body.name,
-    email: req.body.email,
-    message: req.body.message
-   }, (err, response)=>{
-    if (err) throw err;
-    console.log("hey hey hey ");
-    res.send("<h1>Thanks "+req.body.name+"</h1>");
-   })
+
+   const Ben = new choiceModel({name: "ben", iceCreamName: "strawberry"})
+
+   Ben.save(function (err, fluffy) {
+    if (err) return console.error(err);
+    // fluffy.speak();
+    console.log("saved that junk boyyyyyy");
+  });
+
 });
+
+app.get("/allbens", () =>
+{
+  choiceModel.find((err, objs)=>{
+    if (err) return err;
+    console.log("objects below");
+    console.log(objs);
+  })
+})
 
 // //set app.post for contact form
 // app.post("/postthisjunk", (req, res) => {
@@ -293,14 +315,21 @@ app.all("*", (req, res)=>{
 
 
 //Connect to mongo
-MongoClient.connect(MONGODB_URL, (err, database)=>{
-  if (err) throw err;
+// MongoClient.connect(MONGODB_URL, (err, database)=>{
+//   if (err) throw err;
 
-  db = database;
+//   db = database;
 
-  //fire app.listen here
-  app.listen(PORT, ()=> console.log(`server listening on port ${PORT}, ya filthy animal`));
+//   //fire app.listen here
+//   app.listen(PORT, ()=> console.log(`server listening on port ${PORT}, ya filthy animal`));
 
+// })
+
+let dbase = mongoose.connection;
+mongoose.connect(MONGODB_URL);
+mongoose.connection.on("open", () =>
+{
+    app.listen(PORT, ()=> console.log(`server listening on port ${PORT}, ya filthy animal`));
 })
 
 // app.listen(PORT, ()=> console.log(`server listening on port ${PORT}, ya filthy animal`));
