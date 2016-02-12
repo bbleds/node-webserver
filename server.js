@@ -12,6 +12,8 @@ const fs = require('fs');
 const request = require('request');
 const cheerio = require('cheerio');
 const _ = require('lodash');
+const MongoClient = require('mongodb').MongoClient, assert = require('assert');
+const MONGODB_URL = "mongodb://localhost:27017/node-webserver"
 
 const storage = multer.diskStorage({
   destination: "public/uploads/",
@@ -21,6 +23,8 @@ const storage = multer.diskStorage({
 })
 
 const upload = multer({ storage: storage })
+
+let db;
 
 
 //set templating engine to jade or something else
@@ -47,7 +51,7 @@ app.use(sassMiddleware({
 //execute body parser, use body parser -> app.use
 app.use(bodyParser.json());
 //use extended options
-// app.use(bodyParser.urlencoded({ extended: false }));
+app.use(bodyParser.urlencoded({ extended: true }));
 app.use(express.static(path.join(__dirname, '/public')));
 
 //add local vars for render
@@ -60,7 +64,21 @@ app.get("/random", (req, res)=>{
 });
 
 
-//random route
+//brian route
+app.get("/brian", (req, res)=>{
+
+    db.collection("test").find().toArray(function(err, docs) {
+      console.log("Docs BELOOOOOWWW ------------> ");
+      console.log(docs);
+      res.send(docs[0].name)
+
+    });
+    // console.log(pro);
+    // console.log("hay ->>>>>>>>>>>>>>>>>>>>");
+    // res.end("this is the random route");
+});
+
+//contact
 app.get("/contact", (req, res)=>{
     if(req.query.name){
       res.send("<h1>Thanks bruh</h1>");
@@ -70,8 +88,76 @@ app.get("/contact", (req, res)=>{
 
 //set app.post for contact form
 app.post("/contact", (req, res) => {
+  console.log("body ------>");
    console.log(req.body) //you will get your data in this as object.
-  res.send("<h1>Thanks "+req.body.name+"</h1>");
+   //save in db in test collection
+   db.collection("test").insertOne({
+    name: req.body.name,
+    email: req.body.email,
+    message: req.body.message
+   }, (err, response)=>{
+    if (err) throw err;
+    console.log("hey hey hey ");
+    res.send("<h1>Thanks "+req.body.name+"</h1>");
+   })
+});
+
+// //set app.post for contact form
+// app.post("/postthisjunk", (req, res) => {
+
+//   console.log(req);
+
+//   // db.collection("testalot").insertOne(req)
+// });
+
+//scott's function for posting and cacheing system
+app.get('/api/news/scott', (req, res) => {
+    db.collection('news').findOne({}, {sort: {_id: -1}}, (err, doc) => {
+
+    if (doc) {
+      const FIFTEEN_MINUTES_IN_MS = 15 * 60 * 1000;
+      const diff = new Date() - doc._id.getTimestamp() - FIFTEEN_MINUTES_IN_MS;
+      const lessThan15MinutesAgo = diff < 0;
+
+      if (lessThan15MinutesAgo) {
+        res.send(doc);
+        return;
+      }
+    }
+
+    const url = 'http://cnn.com';
+
+    request.get(url, (err, response, html) => {
+      if (err) throw err;
+
+      const news = [];
+      const $ = cheerio.load(html);
+
+      const $bannerText = $('.banner-text');
+
+      news.push({
+        title: $bannerText.text(),
+        url: url + $bannerText.closest('a').attr('href')
+      });
+
+      const $cdHeadline = $('.cd__headline');
+
+      _.range(1, 12).forEach(i => {
+        const $headline = $cdHeadline.eq(i);
+
+        news.push({
+          title: $headline.text(),
+          url: url + $headline.find('a').attr('href')
+        });
+      });
+
+      db.collection('news').insertOne({ top: news }, (err, result) => {
+        if (err) throw err;
+
+        res.send(news);
+      });
+    });
+  });
 });
 
 app.get("/sendphoto", (req, res) => {
@@ -87,11 +173,20 @@ app.post("/sendphoto", upload.single('myimage'), (req, res) => {
     // send single image
     imgur.uploadFile(req.file.path)
         .then(function (json) {
-            console.log(json.data.link);
-            //remove from uploads
-            fs.unlink(req.file.path, ()=>{
-              console.log("File uploaded to imgur and delted from public/uploads");
-            });
+
+          let linkObject = {
+            link : json.data.link
+          }
+          //save to mongo
+          db.collection("imgurs").insertOne(linkObject, (err, dbResponse) => {
+            if (err) throw err;
+              console.log("link below boys");
+                console.log(json.data.link);
+                //remove from uploads
+                fs.unlink(req.file.path, ()=>{
+                  console.log("File uploaded to imgur and delted from public/uploads");
+                });
+          })
         })
         .catch(function (err) {
             console.error(err.message);
@@ -196,7 +291,19 @@ app.all("*", (req, res)=>{
     res.status(404).send("Uhm, excuse me, this isn't the page you're looking for, in fact it doesn't exist!!!")
 });
 
-app.listen(PORT, ()=> console.log(`server listening on port ${PORT}, ya filthy animal`));
+
+//Connect to mongo
+MongoClient.connect(MONGODB_URL, (err, database)=>{
+  if (err) throw err;
+
+  db = database;
+
+  //fire app.listen here
+  app.listen(PORT, ()=> console.log(`server listening on port ${PORT}, ya filthy animal`));
+
+})
+
+// app.listen(PORT, ()=> console.log(`server listening on port ${PORT}, ya filthy animal`));
 
 
 
