@@ -21,7 +21,7 @@ app.use(bodyParser.urlencoded({ extended: false }));
 app.use(bodyParser.json());
 
 app.get('/', (req, res) => {
-  db.collection('news').findOne({}, {sort: {_id: -1}}, (err, doc) => {
+  News.findOne().sort('-_id').exec((err, doc) => {
     if (err) throw err;
 
     res.render('index', {
@@ -59,7 +59,7 @@ app.get('/api/weather', (req, res) => {
 });
 
 app.get('/api/news', (req, res) => {
-  db.collection('news').findOne({}, {sort: {_id: -1}}, (err, doc) => {
+  News.findOne().sort('-_id').exec((err, doc) => {
     if (err) throw err;
 
     if (doc) {
@@ -99,10 +99,12 @@ app.get('/api/news', (req, res) => {
         });
       });
 
-      db.collection('news').insertOne({ top: news }, (err, result) => {
+      const obj = new News({ top: news });
+
+      obj.save((err, _news) => {
         if (err) throw err;
 
-        res.send(news);
+        res.send(_news);
       });
     });
   });
@@ -123,15 +125,8 @@ app.post('/contact', (req, res) => {
   obj.save((err, newObj) => {
     if (err) throw err;
 
-    console.log(newObj);
     res.send(`<h1>Thanks for contacting us ${newObj.name}</h1>`);
   });
-
-  // db.collection('contact').insertOne(obj, (err, result) => {
-  //   if (err) throw err;
-
-  //   res.send(`<h1>Thanks for contacting us ${obj.name}</h1>`);
-  // });
 });
 
 app.get('/sendphoto', (req, res) => {
@@ -189,13 +184,11 @@ const Contact = mongoose.model('contacts', mongoose.Schema({
   message: String
 }));
 
+const News = mongoose.model('news', mongoose.Schema({
+  top: [{title: String, url: String}]
+}));
+
 mongoose.connection.on('open', () => {
-  console.log('MONGO OPEN');
-
-  // if (err) throw err;
-
-  // db = database;
-
   app.listen(PORT, () => {
     console.log(`Node.js server started. Listening on port ${PORT}`);
   });
